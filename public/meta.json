@@ -1,13 +1,14 @@
 {
-    "owner_email" : "publishers@bergcloud.com",
-    "publication_api_version":"1.0",
-    "name": "Hello, World!",
-    "description": "Example publication for Little Printer",
-    "delivered_on": "every Monday",
+    "owner_email": "publishers@bergcloud.com",
+    "publication_api_version": "1.0",
+    "delivery_type": "push",
+    "name": "Push example",
+    "description": "Example push publication for Little Printer",
+    "delivered_on": "when an event happens",
     "send_timezone_info": true,
     "send_delivery_count": false,
     "external_configuration": false,
-    "config" : {
+    "config": {
       "fields": [
           {
               "type": "text",

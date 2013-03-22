@@ -1,0 +1,5 @@
+consumer_token: "your consumer token"
+consumer_token_secret: "your consumer token secret"
+access_token: "your access token"
+access_token_secret: "your access token secret"
+site: "http://api.bergcloud.com"
