@@ -1,5 +1,6 @@
 require 'sinatra'
 require 'json'
+require 'yaml'
 require 'redis'
 require 'oauth'
 
