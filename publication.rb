@@ -107,7 +107,7 @@ post '/push/' do
     content = erb :hello_world, :locals => {:greeting => greeting}
     begin
       res = access_token.post(endpoint, content, "Content-Type" => "text/html; charset=utf-8")
-      if res.is_a?(Net::HTTPNotFound)
+      if res.code == "410"
         db.hdel('push_example:subscriptions', id)
       end
     end
