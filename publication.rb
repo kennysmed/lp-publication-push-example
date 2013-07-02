@@ -1,12 +1,10 @@
 require 'sinatra'
 require 'json'
-require 'yaml'
 require 'redis'
-require 'oauth'
 
-config = YAML.load_file('auth.yml')
-consumer = OAuth::Consumer.new(config['consumer_token'], config['consumer_token_secret'], :site => config['site'])
-access_token = OAuth::AccessToken.new(consumer, config['access_token'], config['access_token_secret'])
+require './publisher'
+
+publisher = Publisher.new
 
 
 # Define some general greetings
@@ -107,7 +105,7 @@ post '/push/' do
     greeting = "#{greetings[config['lang']].sample}, #{config['name']}"
     content = erb :hello_world, :locals => {:greeting => greeting}
     begin
-      res = access_token.post(endpoint, content, "Content-Type" => "text/html; charset=utf-8")
+      res = publisher.push_to_bergcloud(endpoint, content)
       if res.code == "410"
         db.hdel('push_example:subscriptions', id)
       end
