@@ -70,13 +70,99 @@ helpers do
 end
 
 
-# Returns a sample of the publication. Triggered by the user hitting 'print sample' on you publication's page on BERG Cloud.
+get '/' do
+  return 'A Little Printer publication.'
+end
+
+
+# == POST parameters:
+# :config
+#   params[:config] contains a JSON array of responses to the options defined
+#   by the fields object in meta.json. In this case, something like:
+#   params[:config] = ["name":"SomeName", "lang":"SomeLanguage"]
+# :endpoint
+#   the URL to POST content to be printed out by Push.
+# :subscription_id
+#   a string used to identify the subscriber and their Little Printer.
+#
+# Most of this is identical to a non-Push publication.
+# The only difference is that we have an `endpoint` and `subscription_id` and
+# need to store this data in our database. All validation is the same.
+#
+# == Returns:
+# A JSON response object.
+# If the parameters passed in are valid: {"valid":true}
+# If the parameters passed in are not valid: {"valid":false,"errors":["No name was provided"], ["The language you chose does not exist"]}
+#
+post '/validate_config/' do
+  if params[:config].nil?
+    return 400, 'There is no config to validate.'
+  end
+
+  # Preparing what will be returned:
+  response = {
+    :errors => [],
+    :valid => true
+  }
+
+  # Extract the config from the POST data and parse its JSON contents.
+  # user_settings will be something like: {"name":"Alice", "lang":"english"}.
+  user_settings = JSON.parse(params[:config])
+
+  # If the user did not choose a language:
+  if user_settings['lang'].nil? || user_settings['lang'] == ''
+    response[:valid] = false
+    response[:errors] << 'Please choose a language from the menu.'
+  end
+  
+  # If the user did not fill in the name option:
+  if user_settings['name'].nil? || user_settings['name'] == ''
+    response[:valid] = false
+    response[:errors] << 'Please enter your name into the name box.'
+  end
+  
+  unless settings.greetings.include?(user_settings['lang'].downcase)
+    # Given that the select field is populated from a list of languages
+    # we defined this should never happen. Just in case.
+    response[:valid] = false
+    response[:errors] << "We couldn't find the language you selected (#{user_settings['lang']}). Please choose another."
+  end
+
+  ########################
+  # This section is Push-specific, different to a conventional publication:
+
+  # Check we have received an endpoint and subscription ID.
+  if params[:endpoint].nil? || params[:endpoint] == ''
+    response[:valid] = false
+    response[:errors] << 'No Push endpoint was provided.'
+  end
+  if params[:subscription_id].nil? || params[:subscription_id] == ''
+    response[:valid] = false
+    response[:errors] << 'No Push subscription_id was provided.'
+  end
+
+  if response[:valid]
+    # Assuming the form validates, we store the endpoint, plus this user's
+    # language choice and name, keyed by their subscription_id.
+    user_settings[:endpoint] = params[:endpoint]
+    redis.hset('push_example:subscriptions',
+                params[:subscription_id], user_settings.to_json)
+  end
+  # Ending the Push-specific section.
+  ########################
+  
+  content_type :json
+  response.to_json
+end
+
+
+# Called to generate the sample shown on BERG Cloud Remote.
 #
 # == Parameters:
 #   None.
 #
 # == Returns:
-# HTML/CSS edition with etag. This publication changes the greeting depending on the time of day. It is using UTC to determine the greeting.
+# HTML/CSS edition.
 #
 get '/sample/' do
   language = 'english';
@@ -88,61 +174,6 @@ get '/sample/' do
 end
 
 
-# Validate that the config settings are correct and store the subscription info for future use
-#
-# == Parameters:
-# :config
-#   params[:config] contains a JSON array of responses to the options defined by the fields object in meta.json.
-#   in this case, something like:
-#   params[:config] = ["name":"SomeName", "lang":"SomeLanguage"]
-# :endpoint
-#   the URL to POST content to be printed out
-# :subscription_id
-#   a random string used to identify the subscription and it's printer
-#
-# == Returns:
-# a response json object.
-# If the paramters passed in are valid: {"valid":true}
-# If the paramters passed in are not valid: {"valid":false,"errors":["No name was provided"], ["The language you chose does not exist"]}"
-#
-post '/validate_config/' do
-  response = {}
-  response[:errors] = []
-  response[:valid] = true
-  
-  if params[:config].nil?
-    return 400, "You did not post any config to validate"
-  end
-  # Extract config from POST
-  user_settings = JSON.parse(params[:config])
-
-  # If the user did choose a language:
-  if user_settings['lang'].nil? || user_settings['lang']==""
-    response[:valid] = false
-    response[:errors].push('Please select a language from the select box.')
-  end
-  
-  # If the user did not fill in the name option:
-  if user_settings['name'].nil? || user_settings['name']==""
-    response[:valid] = false
-    response[:errors].push('Please enter your name into the name box.')
-  end
-  
-  unless settings.greetings.include?(user_settings['lang'].downcase)
-    # Given that that select box is populated from a list of languages that we have defined this should never happen.
-    response[:valid] = false
-    response[:errors].push("We couldn't find the language you selected (#{user_settings['lang']}) Please select another")
-  end
-
-  user_settings[:endpoint] = params[:endpoint]
-
-  if response[:valid]
-    redis.hset('push_example:subscriptions', params[:subscription_id], user_settings.to_json)
-  end
-  
-  content_type :json
-  response.to_json
-end
 
 # a button to press to send print events to subscriptions
 get '/push/' do
