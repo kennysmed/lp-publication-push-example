@@ -84,7 +84,7 @@ get '/sample/' do
   @greeting = "#{settings.greetings[language][0]}, #{name}"
   # Set the ETag to match the content.
   etag Digest::MD5.hexdigest(language + name + Time.now.utc.strftime('%d%m%Y'))
-  erb :hello_world
+  erb :edition
 end
 
 
@@ -154,7 +154,7 @@ post '/push/' do
     config = JSON.parse(config)
     endpoint = config['endpoint']
     greeting = "#{settings.greetings[config['lang']].sample}, #{config['name']}"
-    content = erb :hello_world, :locals => {:greeting => greeting}
+    content = erb :edition, :locals => {:greeting => greeting}
     begin
       res = access_token.post(endpoint, content, "Content-Type" => "text/html; charset=utf-8")
       if res.code == "410"
