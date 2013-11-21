@@ -60,11 +60,13 @@ helpers do
 
   # Make a new Redis object either from a URL in settings, or a local server.
   def new_redis
-    if settings.redis_url.nil?
-      Redis.new()
-    else
+    begin
+      # If there is a redis_url setting present.
       uri = URI.parse(settings.redis_url)
       Redis.new(:host => uri.host, :port => uri.port, :password => uri.password)
+    rescue NoMethodError
+      # Otherwise, use a local server (we assume there is one).
+      Redis.new()
     end
   end
 end
@@ -174,24 +176,38 @@ get '/sample/' do
 end
 
 
-
-# a button to press to send print events to subscriptions
+# A button to press to send print events to subscribed Little Printers.
 get '/push/' do
   erb :push, :locals => {:pushed => false}
 end
 
+
+# When the button is pressed, this happens.
+# Push a greeting to all subscribed Little Printers.
 post '/push/' do
-  redis.hgetall('push_example:subscriptions').each_pair do |id, config|
+  redis.hgetall('push_example:subscriptions').each_pair do |subscription_id, config|
+    # config contains the subscriber's language, name and endpoint.
     config = JSON.parse(config)
-    endpoint = config['endpoint']
+
+    # Get a random greeting in this subscriber's chosen language.
     greeting = "#{settings.greetings[config['lang']].sample}, #{config['name']}"
+
+    # Make the HTML content to push to the printer.
     content = erb :edition, :locals => {:greeting => greeting}
+
     begin
-      res = access_token.post(endpoint, content, "Content-Type" => "text/html; charset=utf-8")
-      if res.code == "410"
-        redis.hdel('push_example:subscriptions', id)
+      # Post this content to BERG Cloud using OAuth.
+      res = access_token.post(config['endpoint'], content,
+                              'Content-Type' => 'text/html; charset=utf-8')
+      if res.code == '410'
+        # By sending a 410 status code, BERG Cloud has informed us this
+        # user has unsubscribed. So delete their subscription from our
+        # database.
+        redis.hdel('push_example:subscriptions', subscription_id)
       end
     end
   end
+
+  # Show the same form again, with a message to confirm this worked.
   erb :push, :locals => {:pushed => true}
 end

@@ -1,4 +1,17 @@
-<% if pushed %>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Push button</title>
+</head>
+<body>
+
+  <% if pushed %>
     <p>Pushed.</p>
-<% end %>
-<form method=POST><input type=submit value=Push></form>
+  <% end %>
+
+  <form method=POST>
+    <p>Click to send a greeting to all subscribed Little Printers: <input type="submit" value="Say hello"></p>
+  </form>
+
+</body>
+</html>
