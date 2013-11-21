@@ -1,0 +1,8 @@
+consumer_token: yourConsumerToken
+consumer_token_secret: yourConsumerTokenSecret
+access_token: yourAccessToken
+access_token_secret: yourAccessTokenSecret
+site: http://api.bergcloud.com
+# Optional:
+redis_url: redis://username:password@your.redis.server:12345
+
