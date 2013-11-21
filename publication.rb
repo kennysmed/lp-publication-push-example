@@ -24,11 +24,12 @@ configure do
   else
     set :bergcloud_consumer_token, ENV['BERGCLOUD_CONSUMER_TOKEN']
     set :bergcloud_consumer_token_secret, ENV['BERGCLOUD_CONSUMER_TOKEN_SECRET']
-    set :bergcloud_site, ENV['BERGCLOUD_SITE']
     set :bergcloud_access_token, ENV['BERGCLOUD_ACCESS_TOKEN']
     set :bergcloud_access_token_secret, ENV['BERGCLOUD_ACCESS_TOKEN_SECRET']
-    if ENV['REDISCLOUD_URL']
-      set :redis_url, ENV['REDISCLOUD_URL']
+    set :bergcloud_site, ENV['BERGCLOUD_SITE']
+
+    if ENV['REDIS_URL']
+      set :redis_url, ENV['REDIS_URL']
     else
       set :redis_url, nil
     end
@@ -80,7 +81,7 @@ end
 get '/sample/' do
   language = 'english';
   name = 'Little Printer';
-  @greeting = "#{settings.greetings[language].sample}, #{name}"
+  @greeting = "#{settings.greetings[language][0]}, #{name}"
   # Set the etag to be this content
   etag Digest::MD5.hexdigest(language+name)
   erb :hello_world
