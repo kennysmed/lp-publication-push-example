@@ -82,8 +82,8 @@ get '/sample/' do
   language = 'english';
   name = 'Little Printer';
   @greeting = "#{settings.greetings[language][0]}, #{name}"
-  # Set the etag to be this content
-  etag Digest::MD5.hexdigest(language+name)
+  # Set the ETag to match the content.
+  etag Digest::MD5.hexdigest(language + name + Time.now.utc.strftime('%d%m%Y'))
   erb :hello_world
 end
 
