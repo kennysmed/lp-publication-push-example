@@ -1,25 +1,64 @@
-require 'sinatra'
+# encoding: UTF-8
 require 'json'
-require 'yaml'
-require 'redis'
 require 'oauth'
+require 'redis'
+require 'sinatra'
+require 'sinatra/config_file'
 
-config = YAML.load_file('auth.yml')
-consumer = OAuth::Consumer.new(config['consumer_token'], config['consumer_token_secret'], :site => config['site'])
-access_token = OAuth::AccessToken.new(consumer, config['access_token'], config['access_token_secret'])
 
+configure do
+  set :greetings, {
+    'english'     => ['Hello', 'Hi'], 
+    'french'      => ['Salut'], 
+    'german'      => ['Hallo', 'Tag'], 
+    'spanish'     => ['Hola'], 
+    'portuguese'  => ['Olá'], 
+    'italian'     => ['Ciao'], 
+    'swedish'     => ['Hallå']
+  }
 
-# Define some general greetings
-greetings = {"english" => ["Hello", "Hi"],
-    "french" => ["Salut"],
-    "german" => ["Hallo" "Tag"],
-    "spanish" =>["Hola"],
-    "portuguese" => ["Ol&#225;"],
-    "italian" => ["Ciao"],
-    "swedish"=>["Hall&#229;"]}
+  # Reads in settings from the YAML file and makes them available.
+  config_file './config.yml'
+end
 
-# Somewhere to store subscriptions
-db = Redis.new
+helpers do
+  # The BERG Cloud OAuth consumer object.
+  def consumer
+    @consumer ||= OAuth::Consumer.new(
+                    settings.bergcloud_consumer_token,
+                    settings.bergcloud_consumer_token_secret,
+                    :site => settings.bergcloud_site)
+  end
+
+  # The BERG Cloud OAuth access token.
+  def access_token
+    @access_token ||= OAuth::AccessToken.new(
+                        consumer,
+                        settings.bergcloud_access_token,
+                        settings.bergcloud_access_token_secret)
+  end
+
+  def redis
+    @redis ||= new_redis
+  end
+
+  # Make a new Redis object from one of (in order of preference):
+  # * REDISCLOUD_URL environment variable.
+  # * A redis_url config setting.
+  # * A local redis server.
+  def new_redis
+    if ENV['REDISCLOUD_URL']
+      uri = URI.parse(ENV['REDISCLOUD_URL'])
+      Redis.new(:host => uri.host, :port => uri.port, :password => uri.password)
+    elsif settings.redis_url
+      uri = URI.parse(settings.redis_url)
+      Redis.new(:host => uri.host, :port => uri.port, :password => uri.password)
+    else
+      Redis.new()
+    end
+  end
+end
+
 
 # Returns a sample of the publication. Triggered by the user hitting 'print sample' on you publication's page on BERG Cloud.
 #
@@ -32,7 +71,7 @@ db = Redis.new
 get '/sample/' do
   language = 'english';
   name = 'Little Printer';
-  @greeting = "#{greetings[language].sample}, #{name}"
+  @greeting = "#{settings.greetings[language].sample}, #{name}"
   # Set the etag to be this content
   etag Digest::MD5.hexdigest(language+name)
   erb :hello_world
@@ -79,7 +118,7 @@ post '/validate_config/' do
     response[:errors].push('Please enter your name into the name box.')
   end
   
-  unless greetings.include?(user_settings['lang'].downcase)
+  unless settings.greetings.include?(user_settings['lang'].downcase)
     # Given that that select box is populated from a list of languages that we have defined this should never happen.
     response[:valid] = false
     response[:errors].push("We couldn't find the language you selected (#{user_settings['lang']}) Please select another")
@@ -88,7 +127,7 @@ post '/validate_config/' do
   user_settings[:endpoint] = params[:endpoint]
 
   if response[:valid]
-    db.hset('push_example:subscriptions', params[:subscription_id], user_settings.to_json)
+    redis.hset('push_example:subscriptions', params[:subscription_id], user_settings.to_json)
   end
   
   content_type :json
@@ -101,15 +140,15 @@ get '/push/' do
 end
 
 post '/push/' do
-  db.hgetall('push_example:subscriptions').each_pair do |id, config|
+  redis.hgetall('push_example:subscriptions').each_pair do |id, config|
     config = JSON.parse(config)
     endpoint = config['endpoint']
-    greeting = "#{greetings[config['lang']].sample}, #{config['name']}"
+    greeting = "#{settings.greetings[config['lang']].sample}, #{config['name']}"
     content = erb :hello_world, :locals => {:greeting => greeting}
     begin
       res = access_token.post(endpoint, content, "Content-Type" => "text/html; charset=utf-8")
       if res.code == "410"
-        db.hdel('push_example:subscriptions', id)
+        redis.hdel('push_example:subscriptions', id)
       end
     end
   end
