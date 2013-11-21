@@ -185,6 +185,8 @@ end
 # When the button is pressed, this happens.
 # Push a greeting to all subscribed Little Printers.
 post '/push/' do
+  subscribed_count = 0
+  unsubscribed_count = 0
   redis.hgetall('push_example:subscriptions').each_pair do |subscription_id, config|
     # config contains the subscriber's language, name and endpoint.
     config = JSON.parse(config)
@@ -204,10 +206,15 @@ post '/push/' do
         # user has unsubscribed. So delete their subscription from our
         # database.
         redis.hdel('push_example:subscriptions', subscription_id)
+        unsubscribed_count++
+      else
+        subscribed_count++
       end
     end
   end
 
   # Show the same form again, with a message to confirm this worked.
-  erb :push, :locals => {:pushed => true}
+  erb :push, :locals => {:pushed => true,
+                         :subscribed_count => subscribed_count,
+                         :unsubscribed_count => unsubscribed_count}
 end

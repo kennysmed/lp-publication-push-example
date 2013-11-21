@@ -6,7 +6,7 @@
 <body>
 
   <% if pushed %>
-    <p>Pushed.</p>
+    <p><%= subscribed_count %> subscriber(s) greeted. <%= unsubscribed_count %> unsubscribed.</p>
   <% end %>
 
   <form method=POST>
