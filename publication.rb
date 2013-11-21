@@ -19,18 +19,18 @@ configure do
 
   # Reads in settings from the YAML file and makes them available.
   # Or, if there isn't one, from ENV variables.
-  if File.exists?('./config.yml')
+  if File.exists?('./config.yml') 
     config_file './config.yml'
   else
-    settings.bergcloud_consumer_token = ENV['bergcloud_consumer_token']
-    settings.bergcloud_consumer_token_secret = ENV['bergcloud_consumer_token_secret']
-    settings.bergcloud_site = ENV['bergcloud_site']
-    settings.bergcloud_access_token = ENV['bergcloud_access_token']
-    settings.bergcloud_access_token_secret = ENV['bergcloud_access_token_secret']
+    set :bergcloud_consumer_token, ENV['BERGCLOUD_CONSUMER_TOKEN']
+    set :bergcloud_consumer_token_secret, ENV['BERGCLOUD_CONSUMER_TOKEN_SECRET']
+    set :bergcloud_site, ENV['BERGCLOUD_SITE']
+    set :bergcloud_access_token, ENV['BERGCLOUD_ACCESS_TOKEN']
+    set :bergcloud_access_token_secret, ENV['BERGCLOUD_ACCESS_TOKEN_SECRET']
     if ENV['REDISCLOUD_URL']
-      settings.redis_url = ENV['REDISCLOUD_URL']
+      set :redis_url, ENV['REDISCLOUD_URL']
     else
-      settings.redis_url = nil
+      set :redis_url, nil
     end
   end
 end
