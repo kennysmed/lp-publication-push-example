@@ -18,8 +18,23 @@ configure do
   }
 
   # Reads in settings from the YAML file and makes them available.
-  config_file './config.yml'
+  # Or, if there isn't one, from ENV variables.
+  begin
+    config_file './config.yml'
+  rescue LoadError
+    settings.bergcloud_consumer_token = ENV['bergcloud_consumer_token']
+    settings.bergcloud_consumer_token_secret = ENV['bergcloud_consumer_token_secret']
+    settings.bergcloud_site = ENV['bergcloud_site']
+    settings.bergcloud_access_token = ENV['bergcloud_access_token']
+    settings.bergcloud_access_token_secret = ENV['bergcloud_access_token_secret']
+    if ENV['REDISCLOUD_URL']
+      settings.redis_url = ENV['REDISCLOUD_URL']
+    else
+      settings.redis_url = nil
+    end
+  end
 end
+
 
 helpers do
   # The BERG Cloud OAuth consumer object.
@@ -42,19 +57,13 @@ helpers do
     @redis ||= new_redis
   end
 
-  # Make a new Redis object from one of (in order of preference):
-  # * REDISCLOUD_URL environment variable.
-  # * A redis_url config setting.
-  # * A local redis server.
+  # Make a new Redis object either from a URL in settings, or a local server.
   def new_redis
-    if ENV['REDISCLOUD_URL']
-      uri = URI.parse(ENV['REDISCLOUD_URL'])
-      Redis.new(:host => uri.host, :port => uri.port, :password => uri.password)
-    elsif settings.redis_url
+    if settings.redis_url.nil?
+      Redis.new()
+    else
       uri = URI.parse(settings.redis_url)
       Redis.new(:host => uri.host, :port => uri.port, :password => uri.password)
-    else
-      Redis.new()
     end
   end
 end
