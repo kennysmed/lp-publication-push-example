@@ -192,10 +192,10 @@ post '/push/' do
     config = JSON.parse(config)
 
     # Get a random greeting in this subscriber's chosen language.
-    greeting = "#{settings.greetings[config['lang']].sample}, #{config['name']}"
+    @greeting = "#{settings.greetings[config['lang']].sample}, #{config['name']}"
 
     # Make the HTML content to push to the printer.
-    content = erb :edition, :locals => {:greeting => greeting}
+    content = erb :edition
 
     begin
       # Post this content to BERG Cloud using OAuth.
