@@ -1,7 +1,8 @@
 source :rubygems
 
-gem 'sinatra'
-gem 'thin'
 gem 'json'
-gem 'redis'
 gem 'oauth'
+gem 'redis'
+gem 'sinatra'
+gem 'sinatra-contrib'
+gem 'thin'

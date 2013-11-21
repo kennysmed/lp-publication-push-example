@@ -19,9 +19,9 @@ configure do
 
   # Reads in settings from the YAML file and makes them available.
   # Or, if there isn't one, from ENV variables.
-  begin
+  if File.exists?('./config.yml')
     config_file './config.yml'
-  rescue LoadError
+  else
     settings.bergcloud_consumer_token = ENV['bergcloud_consumer_token']
     settings.bergcloud_consumer_token_secret = ENV['bergcloud_consumer_token_secret']
     settings.bergcloud_site = ENV['bergcloud_site']
