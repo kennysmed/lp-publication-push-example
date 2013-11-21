@@ -206,9 +206,9 @@ post '/push/' do
         # user has unsubscribed. So delete their subscription from our
         # database.
         redis.hdel('push_example:subscriptions', subscription_id)
-        unsubscribed_count++
+        unsubscribed_count += 1
       else
-        subscribed_count++
+        subscribed_count += 1
       end
     end
   end
