@@ -47,6 +47,9 @@ helpers do
   end
 
   # The BERG Cloud OAuth access token.
+  # Use something like:
+  #   access_token.post(config['endpoint'], content,
+  #                               'Content-Type' => 'text/html; charset=utf-8')
   def access_token
     @access_token ||= OAuth::AccessToken.new(
                         consumer,
@@ -54,6 +57,7 @@ helpers do
                         settings.bergcloud_access_token_secret)
   end
 
+  # Returns the Redis object (either new or existing).
   def redis
     @redis ||= new_redis
   end
