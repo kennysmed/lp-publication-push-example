@@ -194,6 +194,7 @@ post '/push/' do
   redis.hgetall('push_example:subscriptions').each_pair do |subscription_id, config|
     # config contains the subscriber's language, name and endpoint.
     config = JSON.parse(config)
+    p config
 
     # Get a random greeting in this subscriber's chosen language.
     @greeting = "#{settings.greetings[config['lang']].sample}, #{config['name']}"
