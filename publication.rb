@@ -38,6 +38,23 @@ end
 
 
 helpers do
+  # Returns the Redis object (either new or existing).
+  def redis
+    @redis ||= new_redis
+  end
+
+  # Make a new Redis object either from a URL in settings, or a local server.
+  def new_redis
+    begin
+      # If there is a redis_url setting present.
+      uri = URI.parse(settings.redis_url)
+      Redis.new(:host => uri.host, :port => uri.port, :password => uri.password)
+    rescue NoMethodError
+      # Otherwise, use a local server (we assume there is one).
+      Redis.new()
+    end
+  end
+
   # The BERG Cloud OAuth consumer object.
   def consumer
     @consumer ||= OAuth::Consumer.new(
@@ -56,23 +73,6 @@ helpers do
                         settings.bergcloud_access_token,
                         settings.bergcloud_access_token_secret)
   end
-
-  # Returns the Redis object (either new or existing).
-  def redis
-    @redis ||= new_redis
-  end
-
-  # Make a new Redis object either from a URL in settings, or a local server.
-  def new_redis
-    begin
-      # If there is a redis_url setting present.
-      uri = URI.parse(settings.redis_url)
-      Redis.new(:host => uri.host, :port => uri.port, :password => uri.password)
-    rescue NoMethodError
-      # Otherwise, use a local server (we assume there is one).
-      Redis.new()
-    end
-  end
 end
 
 
@@ -85,7 +85,7 @@ end
 # :config
 #   params[:config] contains a JSON array of responses to the options defined
 #   by the fields object in meta.json. In this case, something like:
-#   params[:config] = ["name":"SomeName", "lang":"SomeLanguage"]
+#   params[:config] = {"name":"SomeName", "lang":"SomeLanguage"}
 # :endpoint
 #   the URL to POST content to be printed out by Push.
 # :subscription_id
