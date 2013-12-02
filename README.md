@@ -1,6 +1,9 @@
 # Little Printer Push API example (Ruby)
 
-This is an example publication written in Ruby using the [Sinatra](http://www.sinatrarb.com/) framework.
+This is an example publication written in Ruby using the [Sinatra](http://www.sinatrarb.com/) framework. The same example can also be seen in:
+
+* [PHP](https://github.com/bergcloud/lp-push-example-php)
+* [Python](https://github.com/bergcloud/lp-push-example-python)
 
 This example expands on the Hello World example, and demonstrates how to use the Push API to send messages directly to subscribed Little Printers.
 
